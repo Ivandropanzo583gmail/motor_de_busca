@@ -7,6 +7,10 @@ interface SearchResult {
   Text: string;
 }
 
+interface ApiResponse {
+  RelatedTopics: { FirstURL?: string; Text?: string }[];
+}
+
 export default function SearchEngine() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -20,23 +24,18 @@ export default function SearchEngine() {
     setResults([]);
 
     try {
-      const response = await axios.get("https://api.duckduckgo.com/", {
+      const response = await axios.get<ApiResponse>("https://api.duckduckgo.com/", {
         params: {
           q: query,
           format: "json",
         },
       });
 
-      if (Array.isArray(response.data.RelatedTopics)) {
-        setResults(
-          response.data.RelatedTopics
-            .filter((item: any) => item.FirstURL && item.Text)
-            .map((item: any) => ({
-              FirstURL: item.FirstURL,
-              Text: item.Text,
-            }))
-        );
-      }
+      const filteredResults = response.data.RelatedTopics.filter(
+        (item): item is SearchResult => !!item.FirstURL && !!item.Text
+      );
+
+      setResults(filteredResults);
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
     }
