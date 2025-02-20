@@ -2,9 +2,14 @@
 import { useState } from "react";
 import axios from "axios";
 
+interface SearchResult {
+  FirstURL: string;
+  Text: string;
+}
+
 export default function SearchEngine() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -21,7 +26,17 @@ export default function SearchEngine() {
           format: "json",
         },
       });
-      setResults(response.data.RelatedTopics || []);
+
+      if (Array.isArray(response.data.RelatedTopics)) {
+        setResults(
+          response.data.RelatedTopics
+            .filter((item: any) => item.FirstURL && item.Text)
+            .map((item: any) => ({
+              FirstURL: item.FirstURL,
+              Text: item.Text,
+            }))
+        );
+      }
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
     }
@@ -49,7 +64,7 @@ export default function SearchEngine() {
       </form>
       {loading && <p className="mt-4 text-gray-600">Carregando...</p>}
       <ul className="mt-6 text-left space-y-4">
-        {results.map((item: any, index) => (
+        {results.map((item, index) => (
           <li key={index} className="border-b pb-2">
             <a
               href={item.FirstURL}
